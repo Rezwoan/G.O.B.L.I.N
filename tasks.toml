@@ -1,0 +1,10 @@
+[[tasks]]
+type = "CollectTask"
+
+[[tasks]]
+type = "FarmTask"
+n_attacks = 10
+
+[[tasks]]
+type = "UpgradeTask"
+target = "Cannon"

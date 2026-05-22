@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"e:\\\\GOBLIN\" -Recurse -File | Where-Object { $_.Name -ne \".gitkeep\" } | Select-Object -ExpandProperty FullName | Sort-Object | ForEach-Object { $_.Replace\\(\"e:\\\\GOBLIN\\\\\",\"\"\\) })"
+    ]
+  }
+}

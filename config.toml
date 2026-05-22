@@ -1,0 +1,29 @@
+[adb]
+host = "127.0.0.1"
+port = 6520
+path = "C:\\Tools\\platform-tools\\adb.exe"
+
+[thresholds]
+gold = 500000
+elixir = 500000
+dark = 2000
+
+[attack]
+delay_base_ms = 150
+strategy = "surround"
+heroes_enabled = true
+spells_enabled = true
+collect_before_farm = true
+troops_per_point = 1
+
+[yolo]
+model_path = "models/coc_yolo.pt"
+confidence = 0.6
+
+[tesseract]
+cmd = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+
+[notify]
+discord_webhook = ""
+telegram_token = ""
+telegram_chat_id = ""
