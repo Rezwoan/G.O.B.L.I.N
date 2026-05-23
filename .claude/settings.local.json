@@ -6,7 +6,12 @@
       "Bash(Write-Host \"eng.lstm deleted \\(or did not exist\\)\")",
       "PowerShell(& \"C:\\\\Program Files\\\\Tesseract-OCR\\\\tesseract.exe\" --version; & \"C:\\\\Program Files\\\\Tesseract-OCR\\\\lstmtraining.exe\" --version)",
       "PowerShell(& \"C:\\\\Program Files\\\\Tesseract-OCR\\\\combine_tessdata.exe\" --help 2>&1; Write-Host \"---\"; Get-Item \"E:\\\\GOBLIN\\\\models\\\\eng.lstm\" | Select-Object Length)",
-      "Bash(Remove-Item *)"
+      "Bash(Remove-Item *)",
+      "Bash(python *)",
+      "Bash(del E:\\\\GOBLIN\\\\tools\\\\fix_regions.py)",
+      "Bash(del E:\\\\GOBLIN\\\\core\\\\adb.py)",
+      "Bash(pip install *)",
+      "Bash(dir E:\\\\GOBLIN /s /b)"
     ]
   }
 }

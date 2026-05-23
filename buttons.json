@@ -1,0 +1,65 @@
+{
+  "btn_attack_home": {
+    "mode": "IMAGE",
+    "coord": null,
+    "template": "E:\\GOBLIN\\templates\\btn_attack_home.png",
+    "configured": true
+  },
+  "btn_find_match": {
+    "mode": "IMAGE",
+    "coord": null,
+    "template": "E:\\GOBLIN\\templates\\btn_find_match.png",
+    "configured": true
+  },
+  "btn_next_base": {
+    "mode": "IMAGE",
+    "coord": null,
+    "template": "E:\\GOBLIN\\templates\\btn_next_base.png",
+    "configured": true
+  },
+  "btn_attack_now": {
+    "mode": "IMAGE",
+    "coord": null,
+    "template": "E:\\GOBLIN\\templates\\btn_attack_now.png",
+    "configured": true
+  },
+  "btn_surrender": {
+    "mode": "IMAGE",
+    "coord": null,
+    "template": "E:\\GOBLIN\\templates\\btn_surrender.png",
+    "configured": true
+  },
+  "btn_return_home": {
+    "mode": "IMAGE",
+    "coord": null,
+    "template": "E:\\GOBLIN\\templates\\btn_return_home.png",
+    "configured": true
+  },
+  "btn_ok_popup": {
+    "mode": "IMAGE",
+    "coord": null,
+    "template": "E:\\GOBLIN\\templates\\btn_ok_popup.png",
+    "configured": true
+  },
+  "btn_reload": {
+    "mode": "TPL",
+    "coord": null,
+    "template": null,
+    "configured": false
+  },
+  "btn_deploy_1": {
+    "mode": "COORD",
+    "coord": [
+      528,
+      1143
+    ],
+    "template": null,
+    "configured": true
+  },
+  "btn_deploy_2": {
+    "mode": "COORD",
+    "coord": null,
+    "template": null,
+    "configured": false
+  }
+}
