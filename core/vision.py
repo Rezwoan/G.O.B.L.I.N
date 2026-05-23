@@ -1,6 +1,6 @@
 import logging
-import os
-from dataclasses import dataclass, field
+import tomllib
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -8,64 +8,116 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class Detection:
-    label: str
-    confidence: float
-    bbox: tuple[float, float, float, float]  # x1, y1, x2, y2 relative 0–1
+class TemplateMatcher:
+    def __init__(self, templates_dir: str = "templates") -> None:
+        self.templates_dir = Path(templates_dir)
+        self.threshold = 0.8
+        self._all_regions: dict[str, tuple[float, float, float, float]] = {}
+        self.templates: dict[str, dict] = {}
+        self._load_templates()
 
-    @property
-    def center(self) -> tuple[float, float]:
-        x1, y1, x2, y2 = self.bbox
-        return ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
-
-
-class YOLODetector:
-    def __init__(self, model_path: str, confidence: float = 0.6) -> None:
-        self.model_path = model_path
-        self.confidence = confidence
-        self._model = None
-        self._load_model()
-
-    def _load_model(self) -> None:
-        if not os.path.exists(self.model_path):
-            logger.warning(
-                "YOLO model not found at '%s' — detector will return empty results until model is trained.",
-                self.model_path,
-            )
+    def _load_templates(self) -> None:
+        toml_path = self.templates_dir / "regions.toml"
+        try:
+            with open(toml_path, "rb") as f:
+                data = tomllib.load(f)
+        except FileNotFoundError:
+            logger.error("regions.toml not found at %s", toml_path)
             return
-        try:
-            from ultralytics import YOLO
-            self._model = YOLO(self.model_path)
-            logger.info("Loaded YOLO model from %s", self.model_path)
         except Exception as exc:
-            logger.error("Failed to load YOLO model: %s", exc)
+            logger.error("Failed to load regions.toml: %s", exc)
+            return
 
-    def detect(self, frame: np.ndarray) -> list[Detection]:
-        if self._model is None:
+        for name, rd in data.get("regions", {}).items():
+            region = (float(rd["x1"]), float(rd["y1"]), float(rd["x2"]), float(rd["y2"]))
+            self._all_regions[name] = region
+
+            png_path = self.templates_dir / f"{name}.png"
+            if not png_path.exists():
+                logger.warning("Template PNG missing for '%s' — skipping", name)
+                continue
+            img = cv2.imread(str(png_path))
+            if img is None:
+                logger.warning("Failed to load template image '%s' — skipping", png_path)
+                continue
+            self.templates[name] = {"img": img, "region": region}
+
+        logger.info(
+            "Loaded %d/%d templates from %s",
+            len(self.templates), len(self._all_regions), toml_path,
+        )
+
+    def find(self, frame: np.ndarray, name: str) -> tuple[float, float] | None:
+        entry = self.templates.get(name)
+        if entry is None:
+            return None
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = entry["region"]
+        region_w = (x2 - x1) * w
+        region_h = (y2 - y1) * h
+        if region_w < 1 or region_h < 1:
+            return None
+        scaled = cv2.resize(entry["img"], (int(region_w), int(region_h)))
+        result = cv2.matchTemplate(frame, scaled, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        if max_val >= self.threshold:
+            cx = (max_loc[0] + region_w / 2) / w
+            cy = (max_loc[1] + region_h / 2) / h
+            return (float(cx), float(cy))
+        return None
+
+    def find_all(
+        self, frame: np.ndarray, name: str, threshold: float | None = None
+    ) -> list[tuple[float, float]]:
+        entry = self.templates.get(name)
+        if entry is None:
             return []
-        try:
-            h, w = frame.shape[:2]
-            results = self._model(frame, conf=self.confidence, verbose=False)
-            detections: list[Detection] = []
-            for result in results:
-                for box in result.boxes:
-                    x1, y1, x2, y2 = box.xyxy[0].tolist()
-                    label = result.names[int(box.cls[0])]
-                    conf = float(box.conf[0])
-                    detections.append(Detection(
-                        label=label,
-                        confidence=conf,
-                        bbox=(x1 / w, y1 / h, x2 / w, y2 / h),
-                    ))
-            return detections
-        except Exception as exc:
-            logger.error("YOLO inference failed: %s", exc)
+        thresh = threshold if threshold is not None else self.threshold
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = entry["region"]
+        region_w = (x2 - x1) * w
+        region_h = (y2 - y1) * h
+        if region_w < 1 or region_h < 1:
             return []
+        scaled = cv2.resize(entry["img"], (int(region_w), int(region_h)))
+        result = cv2.matchTemplate(frame, scaled, cv2.TM_CCOEFF_NORMED)
+        locs = np.where(result >= thresh)
+        centers = []
+        for pt_y, pt_x in zip(*locs):
+            cx = (pt_x + region_w / 2) / w
+            cy = (pt_y + region_h / 2) / h
+            centers.append((float(cx), float(cy)))
+        return centers
+
+    def is_visible(self, frame: np.ndarray, name: str) -> bool:
+        return self.find(frame, name) is not None
+
+    def detect_state(self, frame: np.ndarray) -> str:
+        checks = [
+            ("loading",         "supercell_loading_screen"),
+            ("connection_lost", "connection_lost_warning_popup_area"),
+            ("post_battle",     "attack_end_return_home_button"),
+            ("attacking",       "attack_screen_surrender_button"),
+            ("searching",       "attack_screen_next_button"),
+            ("attack_menu",     "multiplayer_find_a_match_button"),
+            ("upgrading",       "home_screen_upgrade_window_area"),
+            ("home",            "home_screen_attack_button"),
+        ]
+        for state_str, template_name in checks:
+            if self.is_visible(frame, template_name):
+                return state_str
+        return "unknown"
+
+    def get_region_bbox(self, frame: np.ndarray, name: str) -> tuple[int, int, int, int] | None:
+        region = self._all_regions.get(name)
+        if region is None:
+            return None
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = region
+        return (int(x1 * w), int(y1 * h), int(x2 * w), int(y2 * h))
 
 
 class DeploymentZoneDetector:
-    # HSV ranges for red
     _LOWER_RED1 = np.array([0, 120, 70])
     _UPPER_RED1 = np.array([10, 255, 255])
     _LOWER_RED2 = np.array([170, 120, 70])
@@ -96,7 +148,6 @@ class DeploymentZoneDetector:
             logger.debug("Largest red contour area %.1f%% < 15%% threshold", 100 * area / total_area)
             return None
 
-        # Convert to relative coordinates
         pts = largest.reshape(-1, 2).astype(float)
         pts[:, 0] /= w
         pts[:, 1] /= h

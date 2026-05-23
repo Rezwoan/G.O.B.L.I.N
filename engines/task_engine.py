@@ -244,18 +244,12 @@ class TaskEngine:
     def _check_loot_thresholds(self, task: FarmTask) -> bool:
         if task.until_gold == 0 and task.until_elixir == 0 and task.until_dark == 0:
             return False
-        try:
-            frame = self.adb.screenshot()
-            gold = self.ocr.read_region(frame, "home_gold") or 0
-            elixir = self.ocr.read_region(frame, "home_elixir") or 0
-            dark = self.ocr.read_region(frame, "home_dark") or 0
-            gold_ok = task.until_gold == 0 or gold >= task.until_gold
-            elixir_ok = task.until_elixir == 0 or elixir >= task.until_elixir
-            dark_ok = task.until_dark == 0 or dark >= task.until_dark
-            return gold_ok and elixir_ok and dark_ok
-        except Exception as exc:
-            logger.error("Loot threshold check failed: %s", exc)
-            return False
+        logger.warning(
+            "FarmTask has loot thresholds (gold=%d elixir=%d dark=%d) but OCR is disabled — "
+            "farming by n_attacks only",
+            task.until_gold, task.until_elixir, task.until_dark,
+        )
+        return False
 
     def _wait_if_paused(self) -> None:
         while self.paused and not self._stop_event.is_set():

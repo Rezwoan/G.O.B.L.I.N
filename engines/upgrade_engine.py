@@ -9,11 +9,10 @@ from core.adb import ADBInterface, _jitter
 from core.navigator import Navigator
 from core.ocr import OCRReader
 from core.state_machine import StateMachine
-from core.vision import YOLODetector
+from core.vision import TemplateMatcher
 
 logger = logging.getLogger(__name__)
 
-# Panel bounding box (relative) — calibrate per resolution
 _PANEL_BBOX = (0.05, 0.10, 0.95, 0.90)
 _PANEL_SCROLL_FROM = (0.5, 0.70)
 _PANEL_SCROLL_TO = (0.5, 0.30)
@@ -25,7 +24,7 @@ class UpgradeEngine:
         self,
         adb: ADBInterface,
         navigator: Navigator,
-        detector: YOLODetector,
+        matcher: TemplateMatcher,
         ocr: OCRReader,
         state_machine: StateMachine,
         config: dict,
@@ -34,7 +33,7 @@ class UpgradeEngine:
     ) -> None:
         self.adb = adb
         self.navigator = navigator
-        self.detector = detector
+        self.matcher = matcher
         self.ocr = ocr
         self.state_machine = state_machine
         self.config = config
@@ -50,35 +49,18 @@ class UpgradeEngine:
             logger.error("Could not open upgrade panel")
             return False
 
-        seen_items: set[str] = set()
         max_scrolls = 30
 
         for scroll_num in range(max_scrolls):
             frame = self.adb.screenshot()
-            panel_frame = self._crop_panel(frame)
 
-            # CLAHE + adaptive threshold on panel region for better OCR
-            processed = self._preprocess_panel(panel_frame)
+            confirm_center = self.matcher.find(frame, "upgrade_confirm_button")
+            if confirm_center:
+                logger.info("Found upgrade confirm button for target '%s'", target)
+                success = self.upgrade_confirmation_flow()
+                self.navigator.close_upgrade_panel()
+                return success
 
-            detections = self.detector.detect(frame)
-            panel_items = [d for d in detections if d.label in ("upgrade_panel", "wall_segment", "btn_upgrade")]
-
-            # Check if target is visible
-            for d in detections:
-                item_key = f"{d.label}_{d.center[0]:.2f}_{d.center[1]:.2f}"
-                if item_key in seen_items:
-                    continue
-                seen_items.add(item_key)
-
-                if d.label == target or self._label_matches(d.label, target):
-                    logger.info("Found upgrade target '%s' at %s", target, d.center)
-                    self.adb.tap(*d.center)
-                    time.sleep(0.8)
-                    success = self.upgrade_confirmation_flow()
-                    self.navigator.close_upgrade_panel()
-                    return success
-
-            # Check if bottom reached
             time.sleep(0.3)
             frame2 = self.adb.screenshot()
             if self.check_bottom(frame, frame2, _PANEL_BBOX):
@@ -86,7 +68,6 @@ class UpgradeEngine:
                 self.navigator.close_upgrade_panel()
                 return False
 
-            # Scroll up inside panel
             self.adb.swipe(*_PANEL_SCROLL_FROM, *_PANEL_SCROLL_TO, duration_ms=400)
             time.sleep(0.5)
 
@@ -95,52 +76,18 @@ class UpgradeEngine:
         return False
 
     def upgrade_confirmation_flow(self) -> bool:
-        """Tap upgrade, check cost vs loot, confirm if sufficient."""
+        """Confirm upgrade assuming sufficient loot (OCR disabled)."""
         frame = self.adb.screenshot()
-        detections = self.detector.detect(frame)
-        upgrade_btn = next((d for d in detections if d.label == "btn_upgrade"), None)
-
-        if upgrade_btn is None:
-            logger.warning("upgrade_confirmation_flow: btn_upgrade not found")
-            return False
-
-        self.adb.tap(*upgrade_btn.center)
-        time.sleep(0.8)
-
-        frame = self.adb.screenshot()
-        upgrade_cost = self.ocr.read_region(frame, "upgrade_cost")
-        home_gold = self.ocr.read_region(frame, "home_gold")
-        home_elixir = self.ocr.read_region(frame, "home_elixir")
-
-        logger.info("Upgrade cost: %s | Home gold: %s | Home elixir: %s", upgrade_cost, home_gold, home_elixir)
-
-        if upgrade_cost is None:
-            logger.warning("Could not read upgrade cost")
-            return False
-
-        max_loot = max(home_gold or 0, home_elixir or 0)
-        if max_loot < upgrade_cost:
-            logger.info("Insufficient loot for upgrade (need %d, have %d)", upgrade_cost, max_loot)
-            if self.notifier:
-                self.notifier.notify("INSUFFICIENT_LOOT", {
-                    "cost": upgrade_cost,
-                    "gold": home_gold,
-                    "elixir": home_elixir,
-                })
-            return False
-
-        # Confirm upgrade
-        detections = self.detector.detect(frame)
-        confirm_btn = next((d for d in detections if d.label in ("btn_upgrade", "btn_confirm")), None)
-        if confirm_btn:
-            self.adb.tap(*confirm_btn.center)
+        confirm_center = self.matcher.find(frame, "upgrade_confirm_button")
+        if confirm_center:
+            self.adb.tap(*confirm_center)
             time.sleep(1.0)
 
-        logger.info("Upgrade confirmed")
+        logger.info("Upgrade confirmed (loot check skipped — OCR disabled)")
         if self.notifier:
-            self.notifier.notify("UPGRADE_STARTED", {"cost": upgrade_cost})
+            self.notifier.notify("UPGRADE_STARTED", {"cost": 0})
         if self.db:
-            self.db.log_upgrade(0, target="", cost_gold=upgrade_cost, cost_elixir=0, cost_dark=0, success=True)
+            self.db.log_upgrade(0, target="", cost_gold=0, cost_elixir=0, cost_dark=0, success=True)
         return True
 
     def check_bottom(self, frame1: np.ndarray, frame2: np.ndarray, panel_bbox: tuple) -> bool:
@@ -168,6 +115,3 @@ class UpgradeEngine:
             cv2.THRESH_BINARY,
             blockSize=11, C=2,
         )
-
-    def _label_matches(self, detected: str, target: str) -> bool:
-        return target.lower() in detected.lower() or detected.lower() in target.lower()

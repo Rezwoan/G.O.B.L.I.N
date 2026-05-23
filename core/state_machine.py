@@ -3,18 +3,19 @@ from enum import Enum, auto
 
 import numpy as np
 
-from core.vision import YOLODetector
+from core.vision import TemplateMatcher
 
 logger = logging.getLogger(__name__)
 
-# YOLO class signatures that identify each state
-_STATE_SIGNATURES: dict[str, list[str]] = {
-    "HOME_VILLAGE": ["btn_attack", "builder_idle", "mine_full"],
-    "SEARCHING":    ["btn_next", "enemy_gold"],
-    "ATTACKING":    ["troop_icon"],
-    "POST_BATTLE":  ["loot_bag"],
-    "UPGRADING":    ["upgrade_panel"],
-    "COLLECTING":   ["btn_collect"],
+_STATE_MAP: dict[str, str] = {
+    "loading":        "IDLE",
+    "connection_lost": "ERROR_RECOVERY",
+    "post_battle":    "POST_BATTLE",
+    "attacking":      "ATTACKING",
+    "searching":      "SEARCHING",
+    "attack_menu":    "HOME_VILLAGE",
+    "upgrading":      "UPGRADING",
+    "home":           "HOME_VILLAGE",
 }
 
 
@@ -30,8 +31,8 @@ class State(Enum):
 
 
 class StateMachine:
-    def __init__(self, detector: YOLODetector) -> None:
-        self._detector = detector
+    def __init__(self, matcher: TemplateMatcher) -> None:
+        self.matcher = matcher
         self._current = State.IDLE
         self.retry_count: int = 0
 
@@ -40,19 +41,16 @@ class StateMachine:
         return self._current
 
     def detect_state(self, frame: np.ndarray) -> State:
-        detections = self._detector.detect(frame)
-        detected_labels = {d.label for d in detections}
-
-        for state_name, required_labels in _STATE_SIGNATURES.items():
-            if any(label in detected_labels for label in required_labels):
-                self.retry_count = 0
-                return State[state_name]
-
-        self.retry_count += 1
-        logger.debug("State unknown (retry %d), detected labels: %s", self.retry_count, detected_labels)
-        if self.retry_count > 3:
-            return State.ERROR_RECOVERY
-        return State.IDLE
+        state_str = self.matcher.detect_state(frame)
+        if state_str == "unknown":
+            self.retry_count += 1
+            logger.debug("State unknown (retry %d)", self.retry_count)
+            if self.retry_count >= 3:
+                return State.ERROR_RECOVERY
+            return State.IDLE
+        self.retry_count = 0
+        state_name = _STATE_MAP.get(state_str, "IDLE")
+        return State[state_name]
 
     def transition(self, new_state: State) -> None:
         if new_state != self._current:

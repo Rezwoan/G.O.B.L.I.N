@@ -11,12 +11,13 @@ from core.adb import ADBInterface, _jitter
 from core.navigator import Navigator
 from core.ocr import OCRReader
 from core.state_machine import StateMachine, State
-from core.vision import YOLODetector, DeploymentZoneDetector
+from core.vision import TemplateMatcher, DeploymentZoneDetector
 from strategies import STRATEGIES
 
 logger = logging.getLogger(__name__)
 
-# Fallback deployment ring: 8% inset border, 20 points
+# Training not required — game handles troop availability automatically
+
 _FALLBACK_RING_INSET = 0.08
 _FALLBACK_N = 20
 
@@ -64,7 +65,7 @@ class AttackEngine:
         self,
         adb: ADBInterface,
         navigator: Navigator,
-        detector: YOLODetector,
+        matcher: TemplateMatcher,
         ocr: OCRReader,
         state_machine: StateMachine,
         config: dict,
@@ -73,7 +74,7 @@ class AttackEngine:
     ) -> None:
         self.adb = adb
         self.navigator = navigator
-        self.detector = detector
+        self.matcher = matcher
         self.ocr = ocr
         self.state_machine = state_machine
         self.config = config
@@ -86,44 +87,9 @@ class AttackEngine:
             logger.error("Failed to reach matchmaking")
             return None
 
-        # Search for a suitable base
         enemy_gold = enemy_elixir = enemy_dark = None
-        thresholds = self.config.get("thresholds", {})
-        min_gold = thresholds.get("gold", 0)
-        min_elixir = thresholds.get("elixir", 0)
-        min_dark = thresholds.get("dark", 0)
+        found = True  # attack every base, no threshold filtering
 
-        found = False
-        for search_num in range(self._MAX_SEARCHES):
-            frame = self.adb.screenshot()
-            enemy_gold = self.ocr.read_region(frame, "enemy_gold")
-            enemy_elixir = self.ocr.read_region(frame, "enemy_elixir")
-            enemy_dark = self.ocr.read_region(frame, "enemy_dark")
-            logger.debug("Search %d: gold=%s elixir=%s dark=%s", search_num, enemy_gold, enemy_elixir, enemy_dark)
-
-            gold_ok = (enemy_gold or 0) >= min_gold
-            elixir_ok = (enemy_elixir or 0) >= min_elixir
-            dark_ok = (enemy_dark or 0) >= min_dark
-
-            if gold_ok and elixir_ok and dark_ok:
-                found = True
-                break
-
-            # Tap "Next"
-            detections = self.detector.detect(frame)
-            next_btn = next((d for d in detections if d.label == "btn_next"), None)
-            if next_btn:
-                self.adb.tap(*next_btn.center)
-            else:
-                logger.warning("btn_next not found on search %d", search_num)
-                self.adb.tap(0.5, 0.9)  # fallback position
-            time.sleep(_jitter(1000) / 1000.0)
-
-        if not found:
-            logger.warning("No suitable base found after %d searches", self._MAX_SEARCHES)
-            return None
-
-        # Detect deployment zone
         frame1 = self.adb.screenshot()
         time.sleep(0.2)
         frame2 = self.adb.screenshot()
@@ -139,41 +105,30 @@ class AttackEngine:
             logger.warning("No deployment zone detected — using fallback ring")
             deploy_points = _fallback_ring()
 
-        # Deploy troops
-        army = self.read_army()
         attack_config = self.config.get("attack", {})
         delay_base = attack_config.get("delay_base_ms", 150)
         heroes_enabled = attack_config.get("heroes_enabled", True)
         spells_enabled = attack_config.get("spells_enabled", True)
 
-        self._deploy_troops(deploy_points, army, delay_base)
+        self._deploy_troops(deploy_points, delay_base)
 
-        # Deploy heroes
         if heroes_enabled:
             self._deploy_heroes()
 
-        # Deploy spells
         if spells_enabled:
             self._deploy_spells()
 
-        # Wait for battle end
         battle_end = self._wait_for_battle_end()
         if not battle_end:
             logger.warning("Battle timeout — forcing end")
 
-        # Tap end battle
         frame = self.adb.screenshot()
-        detections = self.detector.detect(frame)
-        end_btn = next((d for d in detections if d.label == "btn_end_battle"), None)
-        if end_btn:
-            self.adb.tap(*end_btn.center)
+        center = self.matcher.find(frame, "attack_screen_end_battle_button")
+        if center:
+            self.adb.tap(*center)
             time.sleep(2.0)
 
-        # OCR loot gained
-        frame = self.adb.screenshot()
-        loot_gold = self.ocr.read_region(frame, "enemy_gold")
-        loot_elixir = self.ocr.read_region(frame, "enemy_elixir")
-        loot_dark = self.ocr.read_region(frame, "enemy_dark")
+        loot_gold = loot_elixir = loot_dark = 0
 
         result = AttackResult(
             strategy=strategy_name,
@@ -184,9 +139,8 @@ class AttackEngine:
             loot_elixir=loot_elixir,
             loot_dark=loot_dark,
         )
-        logger.info("Attack complete: loot gold=%s elixir=%s dark=%s", loot_gold, loot_elixir, loot_dark)
+        logger.info("Attack complete: loot gold=0 elixir=0 dark=0 (OCR disabled)")
 
-        # Tap continue / return home
         time.sleep(1.0)
         self.navigator.go_home()
         return result
@@ -194,19 +148,21 @@ class AttackEngine:
     def _deploy_troops(
         self,
         deploy_points: list[tuple[float, float]],
-        army: dict[str, int],
         delay_base: float,
     ) -> None:
         frame = self.adb.screenshot()
-        detections = self.detector.detect(frame)
-        troop_icons = [d for d in detections if d.label == "troop_icon"]
-
-        for i, icon in enumerate(troop_icons):
-            # Tap troop icon to select it
-            self.adb.tap(*icon.center)
+        bar_bbox = self.matcher.get_region_bbox(frame, "troops_siege_hero_spells_deployment_bar_area")
+        if bar_bbox is None:
+            logger.warning("Deployment bar region not found — skipping troop deployment")
+            return
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = bar_bbox
+        n_slots = 8
+        for i in range(n_slots):
+            slot_x = (x1 + (x2 - x1) * (i + 0.5) / n_slots) / w
+            slot_y = ((y1 + y2) / 2) / h
+            self.adb.tap(slot_x, slot_y)
             time.sleep(_jitter(200) / 1000.0)
-
-            # Tap each deployment point
             for rx, ry in deploy_points:
                 jx = rx + random.uniform(-0.005, 0.005)
                 jy = ry + random.uniform(-0.005, 0.005)
@@ -215,12 +171,17 @@ class AttackEngine:
 
     def _deploy_heroes(self) -> None:
         frame = self.adb.screenshot()
-        detections = self.detector.detect(frame)
-        heroes = [d for d in detections if d.label == "hero_icon"]
-        for hero in heroes:
-            self.adb.tap(*hero.center)
+        bar_bbox = self.matcher.get_region_bbox(frame, "troops_siege_hero_spells_deployment_bar_area")
+        if bar_bbox is None:
+            return
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = bar_bbox
+        # Heroes occupy the rightmost slots of the deployment bar
+        for frac in (0.82, 0.89, 0.95):
+            slot_x = (x1 + (x2 - x1) * frac) / w
+            slot_y = ((y1 + y2) / 2) / h
+            self.adb.tap(slot_x, slot_y)
             time.sleep(_jitter(300) / 1000.0)
-            # Tap center of base for hero
             self.adb.tap(
                 0.5 + random.uniform(-0.03, 0.03),
                 0.5 + random.uniform(-0.03, 0.03),
@@ -229,10 +190,16 @@ class AttackEngine:
 
     def _deploy_spells(self) -> None:
         frame = self.adb.screenshot()
-        detections = self.detector.detect(frame)
-        spells = [d for d in detections if d.label == "spell_icon"]
-        for spell in spells:
-            self.adb.tap(*spell.center)
+        bar_bbox = self.matcher.get_region_bbox(frame, "troops_siege_hero_spells_deployment_bar_area")
+        if bar_bbox is None:
+            return
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = bar_bbox
+        # Spells occupy mid-right slots between troops and heroes
+        for frac in (0.62, 0.70, 0.77):
+            slot_x = (x1 + (x2 - x1) * frac) / w
+            slot_y = ((y1 + y2) / 2) / h
+            self.adb.tap(slot_x, slot_y)
             time.sleep(_jitter(200) / 1000.0)
             self.adb.tap(
                 0.5 + random.uniform(-0.04, 0.04),
@@ -242,30 +209,15 @@ class AttackEngine:
 
     def _wait_for_battle_end(self) -> bool:
         start = time.time()
-        while time.time() - start < self._BATTLE_TIMEOUT:
+        while time.time() - start < 180:
             frame = self.adb.screenshot()
-            detections = self.detector.detect(frame)
-            if any(d.label == "btn_end_battle" for d in detections):
-                return True
-            timer = self.ocr.read_region(frame, "battle_timer")
-            if timer is not None and timer == 0:
+            if self.matcher.is_visible(frame, "attack_screen_end_battle_button"):
                 return True
             time.sleep(self._POLL_INTERVAL)
-        return False
+        return True  # fixed 3-minute timeout
 
     def read_army(self) -> dict[str, int]:
-        frame = self.adb.screenshot()
-        detections = self.detector.detect(frame)
-        army: dict[str, int] = {}
-        for d in detections:
-            if d.label == "troop_icon":
-                x1, y1, x2, y2 = d.bbox
-                # OCR the count badge slightly below/right of icon
-                count_bbox = (x2 - 0.03, y2 - 0.04, x2 + 0.01, y2 + 0.01)
-                count = self.ocr.read_raw(frame, count_bbox)
-                label = f"troop_{len(army)}"
-                army[label] = count or 0
-        return army
+        return {}
 
     def log_result(self, result: AttackResult, session_id: int) -> None:
         if self.db:

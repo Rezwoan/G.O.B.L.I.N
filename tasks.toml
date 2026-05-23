@@ -1,9 +1,12 @@
 [[tasks]]
-type = "CollectTask"
-
-[[tasks]]
 type = "FarmTask"
 n_attacks = 10
+until_gold = 0
+until_elixir = 0
+until_dark = 0
+
+[[tasks]]
+type = "CollectTask"
 
 [[tasks]]
 type = "UpgradeTask"

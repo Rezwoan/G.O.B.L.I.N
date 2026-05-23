@@ -20,9 +20,6 @@ troops_per_point = 1
 model_path = "models/coc_yolo.pt"
 confidence = 0.6
 
-[tesseract]
-cmd = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
-
 [notify]
 discord_webhook = ""
 telegram_token = ""

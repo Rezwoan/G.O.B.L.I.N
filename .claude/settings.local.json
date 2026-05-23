@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Get-ChildItem \"e:\\\\GOBLIN\" -Recurse -File | Where-Object { $_.Name -ne \".gitkeep\" } | Select-Object -ExpandProperty FullName | Sort-Object | ForEach-Object { $_.Replace\\(\"e:\\\\GOBLIN\\\\\",\"\"\\) })"
+      "PowerShell(Get-ChildItem \"e:\\\\GOBLIN\" -Recurse -File | Where-Object { $_.Name -ne \".gitkeep\" } | Select-Object -ExpandProperty FullName | Sort-Object | ForEach-Object { $_.Replace\\(\"e:\\\\GOBLIN\\\\\",\"\"\\) })",
+      "Bash(Remove-Item -Force \"E:\\\\GOBLIN\\\\models\\\\eng.lstm\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"eng.lstm deleted \\(or did not exist\\)\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\Tesseract-OCR\\\\tesseract.exe\" --version; & \"C:\\\\Program Files\\\\Tesseract-OCR\\\\lstmtraining.exe\" --version)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Tesseract-OCR\\\\combine_tessdata.exe\" --help 2>&1; Write-Host \"---\"; Get-Item \"E:\\\\GOBLIN\\\\models\\\\eng.lstm\" | Select-Object Length)",
+      "Bash(Remove-Item *)"
     ]
   }
 }

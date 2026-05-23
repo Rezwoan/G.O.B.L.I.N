@@ -2,21 +2,33 @@
 Standalone screenshot collector for YOLO training data.
 Press F9 to save a screenshot. Ctrl+C to exit.
 """
-import os
 import sys
+import tomllib
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Always resolve paths relative to the project root (one level up from tools/)
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 import keyboard
 
 from core.adb import ADBInterface
 
-OUTPUT_DIR = Path("training_data/raw")
+OUTPUT_DIR = PROJECT_ROOT / "training_data" / "raw"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 _count = 0
+
+
+def load_adb_config() -> dict:
+    config_path = PROJECT_ROOT / "config.toml"
+    try:
+        with open(config_path, "rb") as f:
+            return tomllib.load(f).get("adb", {})
+    except FileNotFoundError:
+        print(f"Warning: config.toml not found at {config_path} — using defaults")
+        return {}
 
 
 def save_screenshot(adb: ADBInterface) -> None:
@@ -24,7 +36,6 @@ def save_screenshot(adb: ADBInterface) -> None:
     try:
         frame = adb.screenshot()
         from PIL import Image
-        import numpy as np
         rgb = frame[:, :, ::-1]
         img = Image.fromarray(rgb.astype("uint8"))
         filename = datetime.now().strftime("%Y%m%d_%H%M%S_%f") + ".png"
@@ -38,13 +49,18 @@ def save_screenshot(adb: ADBInterface) -> None:
 
 def main() -> None:
     print("G.O.B.L.I.N Capture Tool")
-    print(f"Output directory: {OUTPUT_DIR.resolve()}")
+    print(f"Output directory: {OUTPUT_DIR}")
     print("Press F9 to capture. Ctrl+C to exit.\n")
 
-    adb = ADBInterface()
+    adb_cfg = load_adb_config()
+    adb = ADBInterface(
+        host=adb_cfg.get("host", "127.0.0.1"),
+        port=adb_cfg.get("port", 5555),
+        adb_path=adb_cfg.get("path", "adb"),
+    )
     try:
         adb.connect()
-        print("ADB connected.")
+        print(f"ADB connected to {adb.host}:{adb.port}")
     except ConnectionError as exc:
         print(f"ADB connection failed: {exc}")
         sys.exit(1)

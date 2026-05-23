@@ -1,0 +1,193 @@
+[regions]
+
+[regions.main_screen_attack_button]
+x1 = 0.0229
+y1 = 0.9398
+x2 = 0.0854
+y2 = 0.9657
+
+[regions.home_screen_attack_button]
+x1 = 0.0229
+y1 = 0.9398
+x2 = 0.0854
+y2 = 0.9657
+
+[regions.multiplayer_find_a_match_button]
+x1 = 0.0844
+y1 = 0.6639
+x2 = 0.2005
+y2 = 0.6917
+
+[regions.actual_attack_button]
+x1 = 0.8193
+y1 = 0.8352
+x2 = 0.8974
+y2 = 0.8657
+
+[regions.attack_screen_next_button]
+x1 = 0.9172
+y1 = 0.7815
+x2 = 0.9703
+y2 = 0.8167
+
+[regions.attack_screen_end_battle_button]
+x1 = 0.0224
+y1 = 0.8361
+x2 = 0.0974
+y2 = 0.8593
+
+[regions.attack_percentage_display_area]
+x1 = 0.926
+y1 = 0.8278
+x2 = 0.9885
+y2 = 0.8796
+
+[regions.troops_siege_hero_spells_deployment_bar_area]
+x1 = 0.0016
+y1 = 0.9009
+x2 = 0.9984
+y2 = 0.9944
+
+[regions.connection_lost_warning_popup_area]
+x1 = 0.2927
+y1 = 0.4
+x2 = 0.7
+y2 = 0.6093
+
+[regions.connection_lost_reload_button]
+x1 = 0.2958
+y1 = 0.5463
+x2 = 0.3594
+y2 = 0.5907
+
+[regions.attack_end_return_home_button]
+x1 = 0.4641
+y1 = 0.8213
+x2 = 0.5365
+y2 = 0.8528
+
+[regions.supercell_loading_screen]
+x1 = 0.3906
+y1 = 0.3389
+x2 = 0.6078
+y2 = 0.6583
+
+[regions.home_screen_gold_display_area]
+x1 = 0.824
+y1 = 0.0315
+x2 = 0.9531
+y2 = 0.063
+
+[regions.home_screen_elixer_display_area]
+x1 = 0.8255
+y1 = 0.1083
+x2 = 0.9542
+y2 = 0.1435
+
+[regions.home_screen_dark_elixer_display_area]
+x1 = 0.8714
+y1 = 0.1861
+x2 = 0.9542
+y2 = 0.2204
+
+[regions.home_screen_upgrade_window_button]
+x1 = 0.4505
+y1 = 0.0037
+x2 = 0.4635
+y2 = 0.0296
+
+[regions.home_screen_upgrade_window_area]
+x1 = 0.3443
+y1 = 0.1269
+x2 = 0.5833
+y2 = 0.6269
+
+[regions.wall_text_inside_upgrade_window]
+x1 = 0.3458
+y1 = 0.5944
+x2 = 0.3719
+y2 = 0.6148
+
+[regions.upgrade_wall_with_gold_button]
+x1 = 0.5542
+y1 = 0.8259
+x2 = 0.612
+y2 = 0.8519
+
+[regions.upgrade_wall_with_elixer_button]
+x1 = 0.6359
+y1 = 0.8259
+x2 = 0.6937
+y2 = 0.85
+
+[regions.attack_screen_surrender_button]
+x1 = 0.0219
+y1 = 0.838
+x2 = 0.0995
+y2 = 0.8593
+
+[regions.attack_screen_available_gold_area]
+x1 = 0.0391
+y1 = 0.112
+x2 = 0.1167
+y2 = 0.1407
+
+[regions.attack_screen_available_exlier_area]
+x1 = 0.0396
+y1 = 0.1546
+x2 = 0.1187
+y2 = 0.1852
+
+[regions.attack_screen_available_dark_elixer_area]
+x1 = 0.0385
+y1 = 0.2
+x2 = 0.1026
+y2 = 0.2315
+
+[regions.upgrade_confirm_button]
+x1 = 0.6646
+y1 = 0.8185
+x2 = 0.7375
+y2 = 0.85
+
+[regions.upgrade_cost_display_area]
+x1 = 0.6255
+y1 = 0.8685
+x2 = 0.7453
+y2 = 0.9074
+
+[regions.upgrade_cost_gold_or_elixer_determine_area]
+x1 = 0.7448
+y1 = 0.862
+x2 = 0.7745
+y2 = 0.9139
+
+[regions.upgrade_cost_gold_icon]
+x1 = 0.7453
+y1 = 0.862
+x2 = 0.774
+y2 = 0.913
+
+[regions.upgrade_cost_elixer_icon]
+x1 = 0.7464
+y1 = 0.863
+x2 = 0.7729
+y2 = 0.9139
+
+[regions.post_attack_loot_gold_area]
+x1 = 0.3703
+y1 = 0.413
+x2 = 0.513
+y2 = 0.4574
+
+[regions.post_attack_loot_elixer_area]
+x1 = 0.3661
+y1 = 0.4796
+x2 = 0.5109
+y2 = 0.5241
+
+[regions.post_attack_loot_dark_elixer_area]
+x1 = 0.4188
+y1 = 0.5435
+x2 = 0.5109
+y2 = 0.5889

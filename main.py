@@ -51,25 +51,20 @@ def main() -> None:
         logger.error("ADB connection failed: %s — continuing without ADB", exc)
 
     # ── Vision ───────────────────────────────────────────────────────────────
-    from core.vision import YOLODetector
-    yolo_cfg = config.get("yolo", {})
-    detector = YOLODetector(
-        model_path=yolo_cfg.get("model_path", "models/coc_yolo.pt"),
-        confidence=yolo_cfg.get("confidence", 0.6),
-    )
+    from core.vision import TemplateMatcher
+    matcher = TemplateMatcher("templates")
 
     # ── OCR ──────────────────────────────────────────────────────────────────
     from core.ocr import OCRReader
-    tess_cfg = config.get("tesseract", {})
-    ocr = OCRReader(tesseract_cmd=tess_cfg.get("cmd") or None)
+    ocr = OCRReader()
 
     # ── State Machine ────────────────────────────────────────────────────────
     from core.state_machine import StateMachine
-    state_machine = StateMachine(detector)
+    state_machine = StateMachine(matcher)
 
     # ── Navigator ────────────────────────────────────────────────────────────
     from core.navigator import Navigator
-    navigator = Navigator(adb, state_machine, detector)
+    navigator = Navigator(adb, state_machine, matcher)
 
     # ── Notifications ────────────────────────────────────────────────────────
     from notify import Notifier
@@ -91,9 +86,9 @@ def main() -> None:
     from engines.upgrade_engine import UpgradeEngine
     from engines.collect_engine import CollectEngine
 
-    attack_engine = AttackEngine(adb, navigator, detector, ocr, state_machine, config, notifier, db)
-    upgrade_engine = UpgradeEngine(adb, navigator, detector, ocr, state_machine, config, notifier, db)
-    collect_engine = CollectEngine(adb, detector, state_machine)
+    attack_engine = AttackEngine(adb, navigator, matcher, ocr, state_machine, config, notifier, db)
+    upgrade_engine = UpgradeEngine(adb, navigator, matcher, ocr, state_machine, config, notifier, db)
+    collect_engine = CollectEngine(adb, matcher, state_machine)
 
     # ── Task Engine ──────────────────────────────────────────────────────────
     from engines.task_engine import TaskEngine
