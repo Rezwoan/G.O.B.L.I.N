@@ -1,0 +1,137 @@
+{
+  "max_troops": 1,
+  "troops": [
+    {
+      "id": "c45ea574",
+      "name": "ev1",
+      "mode": "IMAGE",
+      "coord": [
+        541,
+        1135
+      ],
+      "template": null,
+      "configured": true,
+      "count": 10,
+      "deploy_at": "all"
+    },
+    {
+      "id": "73e5c517",
+      "name": "ev2",
+      "mode": "IMAGE",
+      "coord": [
+        621,
+        1134
+      ],
+      "template": null,
+      "configured": true,
+      "count": 30,
+      "deploy_at": "all"
+    },
+    {
+      "id": "b0471d74",
+      "name": "yati",
+      "mode": "IMAGE",
+      "coord": [
+        700,
+        1142
+      ],
+      "template": null,
+      "configured": true,
+      "count": 10,
+      "deploy_at": "all"
+    }
+  ],
+  "siege": {
+    "name": "siege",
+    "mode": "IMAGE",
+    "coord": [
+      810,
+      1122
+    ],
+    "template": null,
+    "configured": true,
+    "deploy_at": "all"
+  },
+  "heroes": [
+    {
+      "id": "db6aff9e",
+      "name": "hero1",
+      "mode": "IMAGE",
+      "coord": [
+        895,
+        1127
+      ],
+      "template": null,
+      "configured": true,
+      "deploy_at": "all"
+    },
+    {
+      "id": "606ca4eb",
+      "name": "hero2",
+      "mode": "IMAGE",
+      "coord": [
+        975,
+        1136
+      ],
+      "template": null,
+      "configured": true,
+      "deploy_at": "all"
+    },
+    {
+      "id": "f2072357",
+      "name": "hero3",
+      "mode": "IMAGE",
+      "coord": [
+        1055,
+        1135
+      ],
+      "template": null,
+      "configured": true,
+      "deploy_at": "all"
+    },
+    {
+      "id": "caea312a",
+      "name": "hero4",
+      "mode": "IMAGE",
+      "coord": [
+        1135,
+        1147
+      ],
+      "template": null,
+      "configured": true,
+      "deploy_at": "all"
+    }
+  ],
+  "deploy_positions": [
+    [
+      1095,
+      1057
+    ],
+    [
+      1691,
+      598
+    ],
+    [
+      1063,
+      89
+    ],
+    [
+      832,
+      109
+    ],
+    [
+      194,
+      582
+    ],
+    [
+      197,
+      591
+    ],
+    [
+      829,
+      1066
+    ]
+  ],
+  "deploy_tap_delay_ms": 200,
+  "ability_delay_ms": 2500
+}

@@ -3,5 +3,6 @@
   "match_threshold": 0.8,
   "toggle_hotkey": "<f9>",
   "window_title": "Clash of Clans - ReezzREX0690",
-  "opacity": 0.8
+  "opacity": 0.8,
+  "click_mode": "foreground"
 }

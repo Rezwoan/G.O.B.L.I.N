@@ -2,5 +2,4 @@ mss
 opencv-python
 pywin32
 pynput
-customtkinter
 pillow

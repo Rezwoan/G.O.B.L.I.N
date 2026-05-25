@@ -1,0 +1,132 @@
+{
+  "attacks_per_upgrade": 40,
+  "attack_steps": [
+    {
+      "id": "atk_01",
+      "action": "DETECT",
+      "target": "home.attack",
+      "detect_timeout_ms": 60000,
+      "on_fail": "ALARM_WAIT",
+      "delay_ms": 300
+    },
+    {
+      "id": "atk_02",
+      "action": "ZOOM_OUT",
+      "repeat": 5,
+      "delay_ms": 500
+    },
+    {
+      "id": "atk_03",
+      "action": "CLICK",
+      "target": "home.attack",
+      "repeat": 1,
+      "delay_ms": 1500
+    },
+    {
+      "id": "atk_04",
+      "action": "DETECT",
+      "target": "attack.find_match",
+      "detect_timeout_ms": 30000,
+      "on_fail": "ALARM_WAIT",
+      "delay_ms": 300
+    },
+    {
+      "id": "atk_05",
+      "action": "CLICK",
+      "target": "attack.find_match",
+      "repeat": 1,
+      "delay_ms": 2000
+    },
+    {
+      "id": "atk_06",
+      "action": "DETECT",
+      "target": "attack.attack_now",
+      "detect_timeout_ms": 30000,
+      "on_fail": "ALARM_WAIT",
+      "delay_ms": 300
+    },
+    {
+      "id": "atk_07",
+      "action": "CLICK",
+      "target": "attack.attack_now",
+      "repeat": 1,
+      "delay_ms": 500
+    },
+    {
+      "id": "atk_08",
+      "action": "DETECT",
+      "target": "attack.next_base",
+      "detect_timeout_ms": 180000,
+      "on_fail": "ALARM_WAIT",
+      "delay_ms": 300
+    },
+    {
+      "id": "atk_09",
+      "action": "DEPLOY",
+      "delay_ms": 500
+    },
+    {
+      "id": "atk_10",
+      "action": "DETECT",
+      "target": "post_attack.return_home",
+      "detect_timeout_ms": 600000,
+      "on_fail": "ALARM_WAIT",
+      "delay_ms": 300
+    },
+    {
+      "id": "atk_11",
+      "action": "CLICK",
+      "target": "post_attack.return_home",
+      "repeat": 1,
+      "delay_ms": 4000
+    },
+    {
+      "id": "atk_12",
+      "action": "DETECT",
+      "target": "home.attack",
+      "detect_timeout_ms": 60000,
+      "on_fail": "ALARM_WAIT",
+      "delay_ms": 500
+    }
+  ],
+  "upgrade_steps": [
+    {
+      "id": "upg_01",
+      "action": "CLICK",
+      "target": "home.upgradables_icon",
+      "repeat": 1,
+      "delay_ms": 1500
+    },
+    {
+      "id": "upg_02",
+      "action": "SCROLL_SEARCH",
+      "target": "upgrade.walls_item",
+      "scroll_direction": "DOWN",
+      "max_scrolls": 20,
+      "on_fail": "ALARM_WAIT",
+      "delay_ms": 500
+    },
+    {
+      "id": "upg_03",
+      "action": "CLICK",
+      "target": "upgrade.walls_item",
+      "repeat": 1,
+      "delay_ms": 1000
+    },
+    {
+      "id": "upg_04",
+      "action": "CLICK",
+      "target": "upgrade.gold_btn",
+      "repeat": 3,
+      "delay_ms": 800
+    },
+    {
+      "id": "upg_05",
+      "action": "CLICK",
+      "target": "upgrade.elixer_btn",
+      "repeat": 3,
+      "delay_ms": 800
+    }
+  ],
+  "defaults_applied": true
+}
