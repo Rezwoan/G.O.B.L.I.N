@@ -1,3 +1,5 @@
+![G.O.B.L.I.N Poster](https://raw.githubusercontent.com/Rezwoan/G.O.B.L.I.N/main/Gemini_Generated_Image_nt8ycpnt8ycpnt8y.png)
+
 # G.O.B.L.I.N Toolkit
 
 **Game Operation Bot: Loot, Interact & Navigate**
