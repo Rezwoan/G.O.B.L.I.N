@@ -22,6 +22,24 @@ No emulator, no ADB — pure screen capture + native Win32 input injection.
 
 ---
 
+## Demo
+
+The overlay floats on top of Clash of Clans and stays hidden from the game's own screenshot system.
+
+**Configure tab** — add buttons via live Capture or fixed coordinates:
+
+![Configure tab](demo/Screenshot%202026-05-26%20202541.png)
+
+**Bot Flow: Attack** — the full automated attack cycle:
+
+![Attack flow](demo/Screenshot%202026-05-26%20202551.png)
+
+**Bot Flow: Upgrade** — automated resource-spending loop:
+
+![Upgrade flow](demo/Screenshot%202026-05-26%20202615.png)
+
+---
+
 ## How It Works
 
 ```
